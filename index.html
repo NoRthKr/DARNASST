@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personal Assistant Dashboard v4 (GitHub Pages Version)</title>
+    <title>Personal Assistant Dashboard v4 (Firebase Realtime Database Version)</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
@@ -316,7 +316,7 @@
 
         <div class="login-pending-box">
             <h3><i class="fa-solid fa-triangle-exclamation"></i> รายการงานค้างรอปิด (Pending Jobs)</h3>
-            <ul id="login-pending-list" class="login-pending-list"></ul>
+            <ul id="login-pending-list" class="login-pending-list"><li>กำลังโหลดข้อมูลจาก Firebase...</li></ul>
         </div>
     </div>
 
@@ -339,6 +339,7 @@
                     <i class="fa-solid fa-passport"></i> 7. Scan Passport
                 </li>
             </ul>
+  
             <div style="padding: 20px; margin-top: auto;">
                 <button class="btn btn-danger" style="width: 100%; justify-content: center;" onclick="logout()"><i class="fa-solid fa-sign-out-alt"></i> ออกจากระบบ</button>
             </div>
@@ -454,7 +455,7 @@
                             <input type="text" id="car-note" class="form-control" placeholder="หมายเหตุ">
                         </div>
                     </div>
-                    <button class="btn btn-success" onclick="addCarQueue()">เพิ่มคิวรถ</button>
+                    <button class="btn btn-success" onclick="addCarQueueFront()"><i class="fa-solid fa-plus"></i> เพิ่มคิวรถไปยัง Firebase</button>
                     <button class="btn btn-warning" onclick="syncCarToDaily()">ส่งไปหน้า Daily Report</button>
                     <table id="car-table">
                         <thead><tr><th>วันที่</th><th>ห้อง</th><th>เวลา</th><th>สถานที่/หมายเหตุ</th><th>คนขับ</th><th width="100px">จัดการ</th></tr></thead>
@@ -530,6 +531,9 @@
     </div>
 
     <script>
+        // เปลี่ยนมาใช้ URL ของภูมิภาคภูมิภาคเอเชียตะวันออกเฉียงใต้ (Singapore) ตามหน้าจอจริงของพี่นุ้ย
+        const FIREBASE_URL = "https://daran-assistant-default-rtdb.asia-southeast1.firebasedatabase.app/";
+
         let currentActiveSubTab = "checkin";
         let currentRole = "guest"; 
         let currentShift = "morning";
@@ -612,24 +616,28 @@
         function validateLogin() {
             let input = document.getElementById('password-input').value;
             if(input === "call911") {
-                currentRole = "admin"; setupRoleAccess(); loginSuccess("ผู้จัดการ / Admin");
+                currentRole = "admin";
+                setupRoleAccess(); loginSuccess("ผู้จัดการ / Admin");
             } else if (input === "9999") {
-                currentRole = "guest"; setupRoleAccess(); loginSuccess("พนักงาน / Guest");
+                currentRole = "guest";
+                setupRoleAccess(); loginSuccess("พนักงาน / Guest");
             } else {
                 document.getElementById('login-error').style.display = 'block';
             }
         }
 
         function setupRoleAccess() {
-            const adminMenus = ['menu-customer-info', 'menu-partners', 'menu-occupancy', 'menu-pending-jobs'];
+            const adminMenus = ['menu-customer-info', 'menu-partners', 'menu-occupancy'];
             if(currentRole === 'guest') {
                 adminMenus.forEach(id => document.getElementById(id).style.display = 'none');
+                document.getElementById('menu-pending-jobs').style.display = 'flex'; // แก้ไข: เปิดสิทธิ์ให้ Guest เข้าหน้างานค้างสำเร็จ
                 switchTab('daily-report'); 
             } else {
                 adminMenus.forEach(id => document.getElementById(id).style.display = 'flex');
+                document.getElementById('menu-pending-jobs').style.display = 'flex';
                 switchTab('customer-info');
             }
-            document.getElementById('user-role-display').innerText = `ระบบจัดการโรงแรม (${currentRole.toUpperCase()} Mode - Local Storage)`;
+            document.getElementById('user-role-display').innerText = `ระบบจัดการโรงแรม (${currentRole.toUpperCase()} Mode - Firebase REALTIME)`;
         }
 
         function loginSuccess(roleName) {
@@ -637,40 +645,53 @@
             document.getElementById('dashboard-wrapper').style.display = 'flex';
             document.getElementById('password-input').value = '';
             document.getElementById('login-error').style.display = 'none';
-            loadSavedTextsLocal();
-            loadPendingJobsLocal();
+            loadSavedTextsFirebase();
+            loadPendingJobsFirebase();
+            loadCarQueuesFirebase();
         }
 
-        function loadSavedTextsLocal() {
-            if(currentRole !== 'admin') return;
-            const storedTexts = localStorage.getItem('hotel_template_texts');
-            let cloudTexts = storedTexts ? JSON.parse(storedTexts) : defaultTemplates;
-            Object.keys(cloudTexts).forEach(key => {
-                if(document.getElementById('txt-' + key)) {
-                    document.getElementById('txt-' + key).value = cloudTexts[key];
-                }
-            });
+        // --- ระบบ Firebase Realtime Database Integration ---
+        
+        // 1. จัดการข้อมูลตอบลูกค้า (เเยกให้ดึงค่ามาเเสดงผลได้เสมอไม่ว่าจะล็อกอินฝั่งไหน)
+        function loadSavedTextsFirebase() {
+            fetch(`${FIREBASE_URL}hotel_template_texts.json`)
+            .then(res => res.json())
+            .then(data => {
+                let cloudTexts = data ? data : defaultTemplates;
+                Object.keys(cloudTexts).forEach(key => {
+                    if(document.getElementById('txt-' + key)) {
+                        document.getElementById('txt-' + key).value = cloudTexts[key];
+                    }
+                });
+            }).catch(err => console.error("Error loading texts:", err));
         }
 
         function saveCurrentTabText() {
             const value = document.getElementById('txt-' + currentActiveSubTab).value;
-            const storedTexts = localStorage.getItem('hotel_template_texts');
-            let cloudTexts = storedTexts ? JSON.parse(storedTexts) : defaultTemplates;
-            cloudTexts[currentActiveSubTab] = value;
-            localStorage.setItem('hotel_template_texts', JSON.stringify(cloudTexts));
-            const statusSpan = document.getElementById('save-status');
-            statusSpan.style.display = 'inline';
-            setTimeout(() => { statusSpan.style.display = 'none'; }, 2000);
+            fetch(`${FIREBASE_URL}hotel_template_texts/${currentActiveSubTab}.json`, {
+                method: 'PUT',
+                body: JSON.stringify(value)
+            })
+            .then(() => {
+                const statusSpan = document.getElementById('save-status');
+                statusSpan.style.display = 'inline';
+                setTimeout(() => { statusSpan.style.display = 'none'; }, 2000);
+            }).catch(err => alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล: " + err));
         }
 
-        function loadPendingJobsLocal() {
-            const storedJobs = localStorage.getItem('hotel_pending_jobs');
-            let jobs = storedJobs ? JSON.parse(storedJobs) : [
-                { id: 1, text: "ห้อง 204 รอแบงก์ปรับยอดสลิปค่าห้อง", status: "pending" }
-            ];
-            let activeJobs = jobs.filter(j => j.status === "pending");
-            renderPendingJobsList(activeJobs);
-            renderLoginPendingList(activeJobs);
+        // 2. จัดการข้อมูลงานค้าง (ดึงตาม Node "pending_jobs" ใน Firebase จริงของพี่)
+        function loadPendingJobsFirebase() {
+            fetch(`${FIREBASE_URL}pending_jobs.json`)
+            .then(res => res.json())
+            .then(data => {
+                let jobs = [];
+                if (data) {
+                    jobs = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+                }
+                let activeJobs = jobs.filter(j => j.status === "pending");
+                renderPendingJobsList(activeJobs);
+                renderLoginPendingList(activeJobs);
+            }).catch(err => console.error("Error loading jobs:", err));
         }
 
         function renderLoginPendingList(activeJobs) {
@@ -686,23 +707,26 @@
         function addPendingJobFront() {
             const text = document.getElementById('pending-text').value.trim();
             if(!text) return;
-            const storedJobs = localStorage.getItem('hotel_pending_jobs');
-            let jobs = storedJobs ? JSON.parse(storedJobs) : [];
-            jobs.push({ id: Date.now(), text: text, status: "pending" });
-            localStorage.setItem('hotel_pending_jobs', JSON.stringify(jobs));
-            document.getElementById('pending-text').value = '';
-            loadPendingJobsLocal();
+
+            const newJob = { text: text, status: "pending", timestamp: Date.now() };
+            fetch(`${FIREBASE_URL}pending_jobs.json`, {
+                method: 'POST',
+                body: JSON.stringify(newJob)
+            })
+            .then(() => {
+                document.getElementById('pending-text').value = '';
+                loadPendingJobsFirebase();
+            }).catch(err => alert("ไม่สามารถเพิ่มงานค้างได้: " + err));
         }
 
         function closePendingJob(rowId) {
-            const storedJobs = localStorage.getItem('hotel_pending_jobs');
-            if(!storedJobs) return;
-            let jobs = JSON.parse(storedJobs);
-            for(let i = 0; i < jobs.length; i++) {
-                if(jobs[i].id == rowId) { jobs[i].status = "closed"; break; }
-            }
-            localStorage.setItem('hotel_pending_jobs', JSON.stringify(jobs));
-            loadPendingJobsLocal();
+            fetch(`${FIREBASE_URL}pending_jobs/${rowId}/status.json`, {
+                method: 'PUT',
+                body: JSON.stringify("closed")
+            })
+            .then(() => {
+                loadPendingJobsFirebase();
+            }).catch(err => alert("ไม่สามารถปิดงานได้: " + err));
         }
 
         function renderPendingJobsList(jobs) {
@@ -711,20 +735,89 @@
             jobs.forEach(job => {
                 tbody.innerHTML += `<tr>
                     <td style="color:var(--danger-color); font-weight:600;">⚠️ ${job.text}</td>
-                    <td style="text-align:center;"><button class="btn btn-success" onclick="closePendingJob(${job.id})">ปิดงานสำเร็จ</button></td>
+                    <td style="text-align:center;"><button class="btn btn-success" onclick="closePendingJob('${job.id}')">ปิดงานสำเร็จ</button></td>
                 </tr>`;
             });
             document.getElementById('pending-badge').innerText = jobs.length;
         }
 
+        // 3. ดึงข้อมูลคิวรถยนต์จาก Firebase Node "car_queues"
+        let carQueues = [];
+        function loadCarQueuesFirebase() {
+            fetch(`${FIREBASE_URL}car_queues.json`)
+            .then(res => res.json())
+            .then(data => {
+                carQueues = [];
+                if (data) {
+                    carQueues = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+                }
+                renderCarTable();
+            }).catch(err => console.error("Error loading cars:", err));
+        }
+
+        function addCarQueueFront() {
+            const rawDate = document.getElementById('car-date-input').value;
+            const room = document.getElementById('car-room').value.trim();
+            const time = document.getElementById('car-time').value.trim();
+            const dest = document.getElementById('car-dest').value.trim();
+            const note = document.getElementById('car-note').value.trim();
+            
+            if(!rawDate || !room || !time || !dest) {
+                alert('กรุณากรอกข้อมูล วันที่, เลขห้อง, เวลา และปลายทาง ให้ครบถ้วนครับ');
+                return;
+            }
+
+            const dateObj = new Date(rawDate);
+            const formattedDate = dateObj.toLocaleDateString('th-TH', {day: '2-digit', month: '2-digit', year: 'numeric'});
+
+            const newCar = { date: formattedDate, room, time, dest, note, timestamp: Date.now() };
+            
+            fetch(`${FIREBASE_URL}car_queues.json`, {
+                method: 'POST',
+                body: JSON.stringify(newCar)
+            })
+            .then(() => {
+                document.getElementById('car-room').value = '';
+                document.getElementById('car-time').value = '';
+                document.getElementById('car-dest').value = '';
+                document.getElementById('car-note').value = '';
+                loadCarQueuesFirebase();
+            }).catch(err => alert("ไม่สามารถบันทึกคิวรถได้: " + err));
+        }
+
+        function deleteCarQueueFirebase(rowId) {
+            fetch(`${FIREBASE_URL}car_queues/${rowId}.json`, {
+                method: 'DELETE'
+            })
+            .then(() => {
+                loadCarQueuesFirebase();
+            }).catch(err => alert("ลบไม่สำเร็จ: " + err));
+        }
+        
+        function renderCarTable() {
+            const tbody = document.querySelector('#car-table tbody');
+            tbody.innerHTML = '';
+            carQueues.forEach((car) => {
+                tbody.innerHTML += `<tr>
+                    <td>${car.date}</td>
+                    <td>ห้อง ${car.room}</td>
+                    <td><b>${car.time} น.</b></td>
+                    <td>${car.dest}</td>
+                    <td>${car.note || '-'}</td>
+                    <td><button class="btn btn-danger" style="padding:4px 10px;" onclick="deleteCarQueueFirebase('${car.id}')">ลบ</button></td>
+                </tr>`;
+            });
+        }
+
+        // --- ฟังก์ชันเสริมและระบบพื้นฐานเดิม ---
         function checkEnter(event) { if (event.key === "Enter") { validateLogin(); } }
+        
         function logout() {
             document.getElementById('login-screen').style.display = 'flex';
             document.getElementById('dashboard-wrapper').style.display = 'none';
-            loadPendingJobsLocal();
+            loadPendingJobsFirebase();
         }
         
-        // ตั้งค่า Default วันที่ปัจจุบันให้กับฟอร์มทั้งหมด
         document.getElementById('report-date').valueAsDate = new Date();
         document.getElementById('car-date-input').valueAsDate = new Date();
 
@@ -766,7 +859,7 @@
             if(currentShift === 'midday') shiftLabel = 'Mid-Day Shift';
             if(currentShift === 'night') shiftLabel = 'Night Shift';
             document.getElementById('a4-shift-label').innerText = shiftLabel;
-
+            
             const routineBody = document.querySelector('#a4-routines-table tbody');
             routineBody.innerHTML = '';
             
@@ -780,7 +873,7 @@
                     <td>${job} ${remarkHtml}</td>
                 </tr>`;
             });
-
+            
             const syncDivHtml = document.getElementById('daily-car-sync').innerHTML;
             const a4CarsBox = document.getElementById('a4-cars-box');
             a4CarsBox.innerHTML = syncDivHtml.includes('table') ? syncDivHtml : `<p style="color:#64748b; font-style:italic;">ไม่มีข้อมูลคิวรถ</p>`;
@@ -798,51 +891,6 @@
                 target.style.position = "absolute"; target.style.left = "-9999px";
             });
         }
-
-        // --- จัดการคิวรถ (อัปเดตฟังก์ชันเพื่อรองรับฟิลด์ วันที่) ---
-        let carQueues = [];
-        function addCarQueue() {
-            const rawDate = document.getElementById('car-date-input').value;
-            const room = document.getElementById('car-room').value.trim();
-            const time = document.getElementById('car-time').value.trim();
-            const dest = document.getElementById('car-dest').value.trim();
-            const note = document.getElementById('car-note').value.trim();
-            
-            if(!rawDate || !room || !time || !dest) {
-                alert('กรุณากรอกข้อมูล วันที่, เลขห้อง, เวลา และปลายทาง ให้ครบถ้วนครับ');
-                return;
-            }
-
-            // แปลงรูปแบบวันที่โชว์ในตารางให้สวยงาม (เช่น 20/06/2026)
-            const dateObj = new Date(rawDate);
-            const formattedDate = dateObj.toLocaleDateString('th-TH', {day: '2-digit', month: '2-digit', year: 'numeric'});
-
-            carQueues.push({ date: formattedDate, room, time, dest, note });
-            renderCarTable();
-            
-            // ล้างข้อมูลหลังจากกดเพิ่ม (เก็บวันที่ไว้)
-            document.getElementById('car-room').value = '';
-            document.getElementById('car-time').value = '';
-            document.getElementById('car-dest').value = '';
-            document.getElementById('car-note').value = '';
-        }
-        
-        function renderCarTable() {
-            const tbody = document.querySelector('#car-table tbody');
-            tbody.innerHTML = '';
-            carQueues.forEach((car, index) => {
-                tbody.innerHTML += `<tr>
-                    <td>${car.date}</td>
-                    <td>ห้อง ${car.room}</td>
-                    <td><b>${car.time} น.</b></td>
-                    <td>${car.dest}</td>
-                    <td>${car.note || '-'}</td>
-                    <td><button class="btn btn-danger" style="padding:4px 10px;" onclick="deleteCarQueue(${index})">ลบ</button></td>
-                </tr>`;
-            });
-        }
-        
-        function deleteCarQueue(index) { carQueues.splice(index, 1); renderCarTable(); }
         
         function syncCarToDaily() {
             const syncDiv = document.getElementById('daily-car-sync');
@@ -884,7 +932,17 @@
             reader.readAsText(file);
         }
 
-        loadPendingJobsLocal();
+        // โหลดข้อมูลงานค้างมาโชว์ในกล่องหน้า Login ทันทีตอนเริ่มระบบ
+        fetch(`${FIREBASE_URL}pending_jobs.json`)
+        .then(res => res.json())
+        .then(data => {
+            let jobs = [];
+            if (data) jobs = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+            renderLoginPendingList(jobs.filter(j => j.status === "pending"));
+        }).catch(() => {
+            document.getElementById('login-pending-list').innerHTML = `<li style="color:var(--danger-color)">❌ โหลดข้อมูลล้มเหลว</li>`;
+        });
+
         switchShift('morning');
     </script>
 </body>
