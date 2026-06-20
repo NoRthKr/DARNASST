@@ -42,9 +42,12 @@
             height: 100vh;
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 9999;
+            overflow-y: auto;
+            padding: 20px;
         }
 
         .login-card {
@@ -55,6 +58,7 @@
             width: 100%;
             max-width: 400px;
             text-align: center;
+            margin-bottom: 20px;
         }
 
         .login-card i {
@@ -67,6 +71,40 @@
             margin-bottom: 25px;
             color: #0f172a;
             font-size: 1.5rem;
+        }
+
+        .login-pending-box {
+            background: #fff5f5;
+            border: 2px solid var(--danger-color);
+            border-radius: 12px;
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+            text-align: left;
+        }
+
+        .login-pending-box h3 {
+            color: var(--danger-color);
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .login-pending-list {
+            list-style: none;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .login-pending-list li {
+            font-size: 0.9rem;
+            padding: 6px 0;
+            border-bottom: 1px dashed #fecaca;
+            color: #991b1b;
+            font-weight: 600;
         }
 
         /* --- Dashboard Layout --- */
@@ -242,12 +280,24 @@
         .sub-tab { padding: 8px 18px; background: #e2e8f0; border-radius: 6px; cursor: pointer; white-space: nowrap; font-weight: 500; color: #475569; }
         .sub-tab.active { background: var(--primary-color); color: white; }
 
+        .job-remark-input {
+            width: 100%;
+            padding: 4px 8px;
+            font-size: 0.85rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-top: 5px;
+            outline: none;
+        }
+        .job-remark-input:focus { border-color: var(--primary-color); }
+
         /* A4 Layout */
         #a4-export-container { width: 210mm; min-height: 297mm; padding: 20mm; background: white; color: black; box-sizing: border-box; position: absolute; left: -9999px; top: 0; }
         .a4-report-title { text-align: center; margin-bottom: 25px; border-bottom: 3px double #000; padding-bottom: 10px; }
         .a4-meta-info { display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 20px; background: #f8fafc; padding: 15px; border: 1px solid #cbd5e1; border-radius: 6px; gap: 10px; }
         .a4-section-title { font-size: 1.1rem; font-weight: bold; margin-top: 20px; margin-bottom: 10px; border-left: 4px solid var(--sidebar-color); padding-left: 10px; }
         .a4-accident-box { border: 1px solid #cbd5e1; padding: 15px; border-radius: 6px; min-height: 100px; white-space: pre-wrap; background: #fffcf0; }
+        .a4-remark-text { font-size: 0.85rem; color: #475569; font-style: italic; margin-top: 2px; display: block; }
     </style>
 </head>
 <body>
@@ -257,18 +307,23 @@
             <i class="fa-solid fa-lock"></i>
             <h2>ฮัลโหล๋โหม๋</h2>
             <div class="form-group">
-                <label for="password-input">คุณเป็นใคร?</label>
+                <label for="password-input">แกเป็นใคร๊?</label>
                 <input type="password" id="password-input" class="form-control" placeholder="••••" onkeypress="checkEnter(event)">
             </div>
             <p id="login-error" style="color: var(--danger-color); font-size: 0.85rem; margin-bottom: 15px; display: none;">❌ ใครวะ ไม่รู้จัก</p>
-            <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="validateLogin()">เข้าสู่ระบบ</button>
+            <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="validateLogin()">บางคนมาทำงาน บางคนมาทำไม</button>
+        </div>
+
+        <div class="login-pending-box">
+            <h3><i class="fa-solid fa-triangle-exclamation"></i> รายการงานค้างรอปิด (Pending Jobs)</h3>
+            <ul id="login-pending-list" class="login-pending-list"></ul>
         </div>
     </div>
 
     <div id="dashboard-wrapper">
         <div class="sidebar">
             <div class="sidebar-brand">
-                <i class="fa-solid fa-user-shield"></i> My Assistant
+                <i class="fa-solid fa-user-shield"></i> Daran Assistant
             </div>
             <ul class="sidebar-menu">
                 <li id="menu-customer-info" class="active" onclick="switchTab('customer-info')"><i class="fa-solid fa-comments"></i> 1. ข้อมูลตอบลูกค้า</li>
@@ -325,7 +380,7 @@
                     </div>
 
                     <div class="action-bar">
-                        <span id="save-status" style="font-size: 0.9rem; color: var(--success-color); font-weight: bold; display: none;"><i class="fa-solid fa-circle-check"></i> บันทึกข้อมูลลงเครื่องนี้เรียบร้อยแล้ว!</span>
+                        <span id="save-status" style="font-size: 0.9rem; color: var(--success-color); font-weight: bold; display: none;"><i class="fa-solid fa-circle-check"></i> บันทึกข้อมูลเรียบร้อยแล้ว!</span>
                         <button class="btn btn-success" onclick="saveCurrentTabText()"><i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล (Save)</button>
                     </div>
                 </div>
@@ -336,7 +391,8 @@
                 
                 <div style="margin: 15px 0; display: flex; gap: 10px;">
                     <button id="shift-btn-morning" class="btn btn-primary" onclick="switchShift('morning')"><i class="fa-solid fa-sun"></i> Morning Shift</button>
-                    <button id="shift-btn-night" class="btn style-control" style="background:#e2e8f0; color:#475569;" onclick="switchShift('night')"><i class="fa-solid fa-moon"></i> Night Shift</button>
+                    <button id="shift-btn-midday" class="btn" style="background:#e2e8f0; color:#475569;" onclick="switchShift('midday')"><i class="fa-solid fa-cloud-sun"></i> Mid-Day Shift</button>
+                    <button id="shift-btn-night" class="btn" style="background:#e2e8f0; color:#475569;" onclick="switchShift('night')"><i class="fa-solid fa-moon"></i> Night Shift</button>
                 </div>
 
                 <div class="card" style="background: #f8fafc; border: 1px solid #e2e8f0;">
@@ -368,24 +424,40 @@
                     <div id="daily-car-sync" style="background: #f1f5f9; padding: 15px; border-radius: 6px; margin: 15px 0; border: 1px dashed #cbd5e1;">
                         ยังไม่มีข้อมูลคิวรถถูกส่งมา
                     </div>
-                    <button class="btn btn-primary" onclick="alert('บันทึกสำเร็จ!')">บันทึก</button>
-                    <button class="btn btn-success" onclick="exportToJPG()">Export ภาพ JPG (A4)</button>
+                    <button class="btn btn-primary" onclick="alert('บันทึกสำเร็จ!')">saveก่อน เดี๋ยวหาย!</button>
+                    <button class="btn btn-success" onclick="exportToJPG()">เสร็จแล้วก็ส่งไปดิ!</button>
                 </div>
             </div>
 
             <div id="car-queue" class="container">
-                <h2><i class="fa-solid fa-car"></i> 3. หมวดสรุปคิวรถ</h2>
+                <h2><i class="fa-solid fa-car"></i> 3. สรุปคิวรถ</h2>
                 <div class="card">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;" class="form-group">
-                        <input type="text" id="car-room" class="form-control" placeholder="เลขห้อง">
-                        <input type="text" id="car-time" class="form-control" placeholder="เวลา">
-                        <input type="text" id="car-dest" class="form-control" placeholder="ปลายทาง">
-                        <input type="text" id="car-note" class="form-control" placeholder="หมายเหตุ/คนขับ">
+                    <div style="display: grid; grid-template-columns: 1.2fr 0.8fr 0.8fr 1.2fr 1.5fr; gap: 12px;" class="form-group">
+                        <div>
+                            <label style="font-size:0.8rem; font-weight:600;">วันที่รับส่ง</label>
+                            <input type="date" id="car-date-input" class="form-control">
+                        </div>
+                        <div>
+                            <label style="font-size:0.8rem; font-weight:600;">เลขห้อง</label>
+                            <input type="text" id="car-room" class="form-control" placeholder="ห้อง">
+                        </div>
+                        <div>
+                            <label style="font-size:0.8rem; font-weight:600;">เวลา</label>
+                            <input type="text" id="car-time" class="form-control" placeholder="เวลา">
+                        </div>
+                        <div>
+                            <label style="font-size:0.8rem; font-weight:600;">สถานที่/หมายเหตุ</label>
+                            <input type="text" id="car-dest" class="form-control" placeholder="ปลายทาง">
+                        </div>
+                        <div>
+                            <label style="font-size:0.8rem; font-weight:600;">คนขับ</label>
+                            <input type="text" id="car-note" class="form-control" placeholder="หมายเหตุ">
+                        </div>
                     </div>
                     <button class="btn btn-success" onclick="addCarQueue()">เพิ่มคิวรถ</button>
-                    <button class="btn btn-warning" onclick="syncCarToDaily()">ส่งข้อมูลไป Daily Report</button>
+                    <button class="btn btn-warning" onclick="syncCarToDaily()">ส่งไปหน้า Daily Report</button>
                     <table id="car-table">
-                        <thead><tr><th>ห้อง</th><th>เวลา</th><th>ปลายทาง</th><th>หมายเหตุ</th><th width="100px">จัดการ</th></tr></thead>
+                        <thead><tr><th>วันที่</th><th>ห้อง</th><th>เวลา</th><th>สถานที่/หมายเหตุ</th><th>คนขับ</th><th width="100px">จัดการ</th></tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
@@ -429,7 +501,7 @@
                     </table>
                 </div>
             </div>
-            
+  
             <div id="scan-passport" class="container">
                 <h2><i class="fa-solid fa-passport"></i> 7. Scan Passport</h2>
                 <div class="card">
@@ -445,7 +517,7 @@
             <p>รายงานสรุปผลการปฏิบัติงานประจำกะของพนักงานต้อนรับ</p>
         </div>
         <div class="a4-meta-info">
-            <div><strong>วันที่:</strong> <span id="a4-date">-</span></div>
+            <div><strong>วันที่คีย์รายงาน:</strong> <span id="a4-date">-</span></div>
             <div><strong>กะทำงาน:</strong> <span id="a4-hours">-</span></div>
             <div style="grid-column: span 2;"><strong>ผู้บันทึก:</strong> <span id="a4-staff">-</span></div>
         </div>
@@ -462,23 +534,25 @@
         let currentRole = "guest"; 
         let currentShift = "morning";
 
-        // รายการรูทีนแยกกะ
         const shiftJobs = {
             morning: [
                 "ตรวจสอบอีเมล์รอบเช้า",
                 "อัพเดท Alotment ให้แก่พาร์ทเนอร์",
                 "ตรวจสอบเรทราคาจองและโปรโมชั่นจาก OTA",
                 "บันทึกข้อมูล Guest In-House Database",
-                "จัดเก็บ New Booking & Database เข้าแฟ้ม",
+                "รายงานการปฏิงานฟร้อนประจำกะเช้า"
+            ],
+            midday: [
+                "รับช่วงต่องานกะเช้าและตรวจสอบงานตกค้าง",
                 "จัดเตรียมเวลคัมดริ้งค์และน้ำแข็ง",
                 "เตรียม Registration Form",
                 "ติดต่อคอนเฟิร์มลูกค้าเช็คอินวันพรุ่งนี้",
-                "รายงานการปฏิงานฟร้อนประจำกะเช้า"
+                "เช็คความพร้อมห้องพักร่วมกับแผนกแม่บ้าน (Housekeeping)",
+                "ประสานงานคิวรถรับส่งช่วงเย็น-ค่ำ",
             ],
             night: [
                 "อัพเดท VIP Guest List ประจำวัน",
                 "Mapping ข้อมูล รร.4 และ ตม.30 ส่งกรมการปกครอง",
-                "อัพเดท VIP Guest List ประจำวัน",
                 "บันทึกค่าใช้จ่าย Guest In-House",
                 "รายงาน New Booking ประจำวัน",
                 "Settle เครื่อง EDC:KB & BL",
@@ -487,7 +561,6 @@
             ]
         };
 
-        // ค่าเริ่มต้นข้อมูลตอบลูกค้ากรณีเพิ่งเปิดใช้งานครั้งแรกและไม่มีข้อมูลเก่าในเครื่อง
         const defaultTemplates = {
             checkin: "เรียน คุณ \nขอขอบคุณที่เลือกพักในวันหยุดสุดพิเศษของคุณท่าน\nเช็คอิน \nเช็คเอ้าท์ ",
             direction: "รีสอร์ทตั้งอยู่ห่างจากสนามบิน 15-20 นาที ท่านสามารถเดินทางมาโดยแท็กซี่...",
@@ -496,23 +569,28 @@
             payment: "กรุณาชำระเงินมัดจำผ่านบัญชีธนาคาร..."
         };
 
-        // ฟังก์ชันสลับกะ Morning / Night
         function switchShift(shift) {
             currentShift = shift;
-            document.getElementById('current-shift-label').innerText = shift === 'morning' ? 'Morning Shift' : 'Night Shift';
-            
             const mBtn = document.getElementById('shift-btn-morning');
+            const mdBtn = document.getElementById('shift-btn-midday');
             const nBtn = document.getElementById('shift-btn-night');
+            
+            mBtn.className = "btn"; mBtn.style = "background:#e2e8f0; color:#475569;";
+            mdBtn.className = "btn"; mdBtn.style = "background:#e2e8f0; color:#475569;";
+            nBtn.className = "btn"; nBtn.style = "background:#e2e8f0; color:#475569;";
+
             if(shift === 'morning') {
-                mBtn.className = "btn btn-primary";
-                nBtn.className = "btn";
-                nBtn.style = "background:#e2e8f0; color:#475569;";
-                document.getElementById('report-hours').value = "08:00 - 17:00 น.";
+                document.getElementById('current-shift-label').innerText = 'Morning Shift';
+                mBtn.className = "btn btn-primary"; mBtn.style = "";
+                document.getElementById('report-hours').value = "07:00 - 16:00 น.";
+            } else if (shift === 'midday') {
+                document.getElementById('current-shift-label').innerText = 'Mid-Day Shift';
+                mdBtn.className = "btn btn-primary"; mdBtn.style = "";
+                document.getElementById('report-hours').value = "11:00 - 20:00 น.";
             } else {
-                nBtn.className = "btn btn-primary";
-                mBtn.className = "btn";
-                mBtn.style = "background:#e2e8f0; color:#475569;";
-                document.getElementById('report-hours').value = "17:00 - 08:00 น.";
+                document.getElementById('current-shift-label').innerText = 'Night Shift';
+                nBtn.className = "btn btn-primary"; nBtn.style = "";
+                document.getElementById('report-hours').value = "14:00 - 23:00 น.";
             }
             renderRoutineJobs();
         }
@@ -522,23 +600,21 @@
             table.innerHTML = `<tr><th width="80px" style="text-align: center;">สถานะ</th><th>รายละเอียดงานมาตรฐาน</th></tr>`;
             shiftJobs[currentShift].forEach((job, index) => {
                 table.innerHTML += `<tr>
-                    <td style="text-align: center;"><input type="checkbox" id="job-${index}" checked></td>
-                    <td><label for="job-${index}">${job}</label></td>
+                    <td style="text-align: center; vertical-align: top;"><input type="checkbox" id="job-${index}" checked></td>
+                    <td>
+                        <label for="job-${index}" style="font-weight: 500;">${job}</label>
+                        <input type="text" id="job-remark-${index}" class="job-remark-input" placeholder="เพิ่มหมายเหตุเพิ่มเติมสำหรับข้อนี้...">
+                    </td>
                 </tr>`;
             });
         }
 
-        // ระบบตรวจสอบรหัสผ่าน (แบ่งสิทธิ์)
         function validateLogin() {
             let input = document.getElementById('password-input').value;
             if(input === "call911") {
-                currentRole = "admin";
-                setupRoleAccess();
-                loginSuccess("ผู้จัดการ / Admin");
+                currentRole = "admin"; setupRoleAccess(); loginSuccess("ผู้จัดการ / Admin");
             } else if (input === "9999") {
-                currentRole = "guest";
-                setupRoleAccess();
-                loginSuccess("พนักงาน / Guest");
+                currentRole = "guest"; setupRoleAccess(); loginSuccess("พนักงาน / Guest");
             } else {
                 document.getElementById('login-error').style.display = 'block';
             }
@@ -561,20 +637,14 @@
             document.getElementById('dashboard-wrapper').style.display = 'flex';
             document.getElementById('password-input').value = '';
             document.getElementById('login-error').style.display = 'none';
-            
-            // โหลดข้อมูลจาก localStorage ของเบราว์เซอร์
             loadSavedTextsLocal();
             loadPendingJobsLocal();
         }
 
-        // --- ปรับส่วนควบคุมข้อมูล: เปลี่ยนเป็นดึง/บันทึกจาก localStorage ของเครื่องแทน App Script ---
         function loadSavedTextsLocal() {
             if(currentRole !== 'admin') return;
-            
-            // ดึงข้อมูลหรือใช้ค่าเริ่มต้นถ้ายังไม่มีประวัติบันทึกในเครื่องนี้
             const storedTexts = localStorage.getItem('hotel_template_texts');
             let cloudTexts = storedTexts ? JSON.parse(storedTexts) : defaultTemplates;
-            
             Object.keys(cloudTexts).forEach(key => {
                 if(document.getElementById('txt-' + key)) {
                     document.getElementById('txt-' + key).value = cloudTexts[key];
@@ -584,13 +654,10 @@
 
         function saveCurrentTabText() {
             const value = document.getElementById('txt-' + currentActiveSubTab).value;
-            
             const storedTexts = localStorage.getItem('hotel_template_texts');
             let cloudTexts = storedTexts ? JSON.parse(storedTexts) : defaultTemplates;
-            
             cloudTexts[currentActiveSubTab] = value;
             localStorage.setItem('hotel_template_texts', JSON.stringify(cloudTexts));
-            
             const statusSpan = document.getElementById('save-status');
             statusSpan.style.display = 'inline';
             setTimeout(() => { statusSpan.style.display = 'none'; }, 2000);
@@ -598,32 +665,30 @@
 
         function loadPendingJobsLocal() {
             const storedJobs = localStorage.getItem('hotel_pending_jobs');
-            // จำลองค่าเริ่มต้นของเดิมหากในเครื่องยังไม่มีประวัติ
             let jobs = storedJobs ? JSON.parse(storedJobs) : [
                 { id: 1, text: "ห้อง 204 รอแบงก์ปรับยอดสลิปค่าห้อง", status: "pending" }
             ];
-            
-            // กรองเอาเฉพาะอันที่เป็น pending มาแสดงผล
             let activeJobs = jobs.filter(j => j.status === "pending");
             renderPendingJobsList(activeJobs);
+            renderLoginPendingList(activeJobs);
+        }
+
+        function renderLoginPendingList(activeJobs) {
+            const loginList = document.getElementById('login-pending-list');
+            loginList.innerHTML = '';
+            if(activeJobs.length === 0) {
+                loginList.innerHTML = `<li style="color: #16a34a; border: none;">🟢 ไม่มีงานค้าง สบายใจได้!</li>`;
+                return;
+            }
+            activeJobs.forEach(job => { loginList.innerHTML += `<li>⚠️ ${job.text}</li>`; });
         }
 
         function addPendingJobFront() {
             const text = document.getElementById('pending-text').value.trim();
             if(!text) return;
-            
             const storedJobs = localStorage.getItem('hotel_pending_jobs');
-            let jobs = storedJobs ? JSON.parse(storedJobs) : [
-                { id: 1, text: "ห้อง 204 รอแบงก์ปรับยอดสลิปค่าห้อง", status: "pending" }
-            ];
-            
-            jobs.push({
-                id: Date.now(),
-                text: text,
-                status: "pending",
-                createdAt: new Date()
-            });
-            
+            let jobs = storedJobs ? JSON.parse(storedJobs) : [];
+            jobs.push({ id: Date.now(), text: text, status: "pending" });
             localStorage.setItem('hotel_pending_jobs', JSON.stringify(jobs));
             document.getElementById('pending-text').value = '';
             loadPendingJobsLocal();
@@ -632,15 +697,10 @@
         function closePendingJob(rowId) {
             const storedJobs = localStorage.getItem('hotel_pending_jobs');
             if(!storedJobs) return;
-            
             let jobs = JSON.parse(storedJobs);
             for(let i = 0; i < jobs.length; i++) {
-                if(jobs[i].id == rowId) {
-                    jobs[i].status = "closed";
-                    break;
-                }
+                if(jobs[i].id == rowId) { jobs[i].status = "closed"; break; }
             }
-            
             localStorage.setItem('hotel_pending_jobs', JSON.stringify(jobs));
             loadPendingJobsLocal();
         }
@@ -658,21 +718,21 @@
         }
 
         function checkEnter(event) { if (event.key === "Enter") { validateLogin(); } }
-        
         function logout() {
             document.getElementById('login-screen').style.display = 'flex';
             document.getElementById('dashboard-wrapper').style.display = 'none';
+            loadPendingJobsLocal();
         }
         
+        // ตั้งค่า Default วันที่ปัจจุบันให้กับฟอร์มทั้งหมด
         document.getElementById('report-date').valueAsDate = new Date();
-        
+        document.getElementById('car-date-input').valueAsDate = new Date();
+
         function switchTab(tabId) {
             document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.sidebar-menu li').forEach(li => li.classList.remove('active'));
-            
             const targetContainer = document.getElementById(tabId);
             if(targetContainer) targetContainer.classList.add('active');
-            
             const targetMenu = document.getElementById('menu-' + tabId);
             if(targetMenu) targetMenu.classList.add('active');
         }
@@ -701,53 +761,84 @@
             document.getElementById('a4-hours').innerText = shiftHours;
             document.getElementById('a4-date').innerText = reportDate;
             document.getElementById('a4-accident-text').innerText = accidentText;
-            document.getElementById('a4-shift-label').innerText = currentShift === 'morning' ? 'Morning Shift' : 'Night Shift';
+            
+            let shiftLabel = 'Morning Shift';
+            if(currentShift === 'midday') shiftLabel = 'Mid-Day Shift';
+            if(currentShift === 'night') shiftLabel = 'Night Shift';
+            document.getElementById('a4-shift-label').innerText = shiftLabel;
 
             const routineBody = document.querySelector('#a4-routines-table tbody');
             routineBody.innerHTML = '';
+            
             shiftJobs[currentShift].forEach((job, i) => {
                 const isChecked = document.getElementById('job-' + i).checked;
-                routineBody.innerHTML += `<tr><td style="text-align:center; font-weight:bold; color:${isChecked ? '#10b981' : '#ef4444'}">${isChecked ? '🟢 สำเร็จ' : '❌ ไม่สำเร็จ'}</td><td>${job}</td></tr>`;
+                const remarkValue = document.getElementById('job-remark-' + i).value.trim();
+                const remarkHtml = remarkValue ? `<span class="a4-remark-text">*หมายเหตุ: ${remarkValue}</span>` : '';
+                
+                routineBody.innerHTML += `<tr>
+                    <td style="text-align:center; font-weight:bold; color:${isChecked ? '#10b981' : '#ef4444'}">${isChecked ? '🟢 สำเร็จ' : '❌ ไม่สำเร็จ'}</td>
+                    <td>${job} ${remarkHtml}</td>
+                </tr>`;
             });
 
             const syncDivHtml = document.getElementById('daily-car-sync').innerHTML;
             const a4CarsBox = document.getElementById('a4-cars-box');
             a4CarsBox.innerHTML = syncDivHtml.includes('table') ? syncDivHtml : `<p style="color:#64748b; font-style:italic;">ไม่มีข้อมูลคิวรถ</p>`;
-
+            
             const target = document.getElementById('a4-export-container');
-            target.style.left = "0px";
-            target.style.position = "static";
-
+            target.style.left = "0px"; target.style.position = "static";
+            
             html2canvas(target, { scale: 2 }).then(canvas => {
-                target.style.position = "absolute";
-                target.style.left = "-9999px";
+                target.style.position = "absolute"; target.style.left = "-9999px";
                 const link = document.createElement('a');
                 link.download = `Daily_Report_${rawDate || 'สรุป'}.jpg`;
                 link.href = canvas.toDataURL('image/jpeg', 0.95);
                 link.click();
             }).catch(err => {
-                target.style.position = "absolute";
-                target.style.left = "-9999px";
+                target.style.position = "absolute"; target.style.left = "-9999px";
             });
         }
 
-        // --- จัดการคิวรถ ---
+        // --- จัดการคิวรถ (อัปเดตฟังก์ชันเพื่อรองรับฟิลด์ วันที่) ---
         let carQueues = [];
         function addCarQueue() {
+            const rawDate = document.getElementById('car-date-input').value;
             const room = document.getElementById('car-room').value.trim();
             const time = document.getElementById('car-time').value.trim();
             const dest = document.getElementById('car-dest').value.trim();
             const note = document.getElementById('car-note').value.trim();
-            if(!room || !time || !dest) return;
-            carQueues.push({ room, time, dest, note });
+            
+            if(!rawDate || !room || !time || !dest) {
+                alert('กรุณากรอกข้อมูล วันที่, เลขห้อง, เวลา และปลายทาง ให้ครบถ้วนครับ');
+                return;
+            }
+
+            // แปลงรูปแบบวันที่โชว์ในตารางให้สวยงาม (เช่น 20/06/2026)
+            const dateObj = new Date(rawDate);
+            const formattedDate = dateObj.toLocaleDateString('th-TH', {day: '2-digit', month: '2-digit', year: 'numeric'});
+
+            carQueues.push({ date: formattedDate, room, time, dest, note });
             renderCarTable();
+            
+            // ล้างข้อมูลหลังจากกดเพิ่ม (เก็บวันที่ไว้)
+            document.getElementById('car-room').value = '';
+            document.getElementById('car-time').value = '';
+            document.getElementById('car-dest').value = '';
+            document.getElementById('car-note').value = '';
         }
         
         function renderCarTable() {
             const tbody = document.querySelector('#car-table tbody');
             tbody.innerHTML = '';
             carQueues.forEach((car, index) => {
-                tbody.innerHTML += `<tr><td>ห้อง ${car.room}</td><td><b>${car.time} น.</b></td><td>${car.dest}</td><td>${car.note || '-'}</td><td><button class="btn btn-danger" style="padding:4px 10px;" onclick="deleteCarQueue(${index})">ลบ</button></td></tr>`;
+                tbody.innerHTML += `<tr>
+                    <td>${car.date}</td>
+                    <td>ห้อง ${car.room}</td>
+                    <td><b>${car.time} น.</b></td>
+                    <td>${car.dest}</td>
+                    <td>${car.note || '-'}</td>
+                    <td><button class="btn btn-danger" style="padding:4px 10px;" onclick="deleteCarQueue(${index})">ลบ</button></td>
+                </tr>`;
             });
         }
         
@@ -756,11 +847,13 @@
         function syncCarToDaily() {
             const syncDiv = document.getElementById('daily-car-sync');
             if(carQueues.length === 0) { syncDiv.innerHTML = "ยังไม่มีข้อมูลคิวรถถูกส่งมา"; return; }
-            let html = `<table><thead><tr><th>ห้อง</th><th>เวลา</th><th>ปลายทาง</th><th>หมายเหตุ</th></tr></thead><tbody>`;
-            carQueues.forEach(car => { html += `<tr><td>ห้อง ${car.room}</td><td>${car.time} น.</td><td>${car.dest}</td><td>${car.note || '-'}</td></tr>`; });
+            let html = `<table><thead><tr><th>วันที่</th><th>ห้อง</th><th>เวลา</th><th>ปลายทาง</th><th>หมายเหตุ</th></tr></thead><tbody>`;
+            carQueues.forEach(car => { 
+                html += `<tr><td>${car.date}</td><td>ห้อง ${car.room}</td><td>${car.time} น.</td><td>${car.dest}</td><td>${car.note || '-'}</td></tr>`; 
+            });
             html += `</tbody></table>`;
             syncDiv.innerHTML = html;
-            alert('ซิงค์ไปหน้าหลักสำเร็จ!');
+            alert('ส่งข้อมูลคิวรถที่มีวันที่ไปหน้า Daily Report สำเร็จแล้วครับ!');
         }
 
         function addAgencyUpdate() {
@@ -791,7 +884,7 @@
             reader.readAsText(file);
         }
 
-        // โหลดข้อมูลเริ่มต้นกะตอนเปิด
+        loadPendingJobsLocal();
         switchShift('morning');
     </script>
 </body>
