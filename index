@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Assistant Dashboard v4 (GitHub Pages Version)</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f1f5f9;
+            --sidebar-color: #0f172a;
+            --primary-color: #3b82f6;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --text-color: #334155;
+            --card-bg: #ffffff;
+            --border-color: #cbd5e1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* --- Login Screen Styling --- */
+        #login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-card i {
+            font-size: 3.5rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .login-card h2 {
+            margin-bottom: 25px;
+            color: #0f172a;
+            font-size: 1.5rem;
+        }
+
+        /* --- Dashboard Layout --- */
+        #dashboard-wrapper {
+            display: none;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-color);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand {
+            padding: 0 20px 20px 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            margin-top: 20px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .sidebar-menu li {
+            padding: 14px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+            color: #94a3b8;
+        }
+
+        .sidebar-menu li:hover, .sidebar-menu li.active {
+            background-color: #1e293b;
+            color: white;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: var(--card-bg);
+            padding: 15px 30px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .container {
+            padding: 30px;
+            display: none;
+            height: calc(100vh - 54px);
+            overflow-y: auto;
+        }
+
+        .container.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #customer-info.container.active {
+            height: calc(100vh - 54px);
+            padding: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+        }
+
+        .full-frame-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow: hidden;
+        }
+
+        .customer-textarea-wrapper {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .full-textarea {
+            width: 100%;
+            flex-grow: 1;
+            resize: none;
+            padding: 20px;
+            font-size: 1.05rem;
+            line-height: 1.6;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            outline: none;
+            color: #1e293b;
+            background-color: #fff;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .full-textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        .action-bar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            padding-top: 5px;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-primary { background: var(--primary-color); color: white; }
+        .btn-success { background: var(--success-color); color: white; }
+        .btn-danger { background: var(--danger-color); color: white; }
+        .btn-warning { background: var(--warning-color); color: white; }
+
+        .form-group { margin-bottom: 15px; text-align: left; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; color: #334155; }
+        .form-control { width: 100%; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.95rem; outline: none; color: #334155; }
+        .form-control:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
+        table th, table td { border: 1px solid #e2e8f0; padding: 12px 14px; text-align: left; font-size: 0.95rem; }
+        table th { background-color: #f8fafc; font-weight: 600; color: #0f172a; }
+        .badge { background: var(--danger-color); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; margin-left: auto; }
+        .sub-tabs { display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; flex-shrink: 0; }
+        .sub-tab { padding: 8px 18px; background: #e2e8f0; border-radius: 6px; cursor: pointer; white-space: nowrap; font-weight: 500; color: #475569; }
+        .sub-tab.active { background: var(--primary-color); color: white; }
+
+        /* A4 Layout */
+        #a4-export-container { width: 210mm; min-height: 297mm; padding: 20mm; background: white; color: black; box-sizing: border-box; position: absolute; left: -9999px; top: 0; }
+        .a4-report-title { text-align: center; margin-bottom: 25px; border-bottom: 3px double #000; padding-bottom: 10px; }
+        .a4-meta-info { display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 20px; background: #f8fafc; padding: 15px; border: 1px solid #cbd5e1; border-radius: 6px; gap: 10px; }
+        .a4-section-title { font-size: 1.1rem; font-weight: bold; margin-top: 20px; margin-bottom: 10px; border-left: 4px solid var(--sidebar-color); padding-left: 10px; }
+        .a4-accident-box { border: 1px solid #cbd5e1; padding: 15px; border-radius: 6px; min-height: 100px; white-space: pre-wrap; background: #fffcf0; }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="login-card">
+            <i class="fa-solid fa-lock"></i>
+            <h2>ฮัลโหล๋โหม๋</h2>
+            <div class="form-group">
+                <label for="password-input">คุณเป็นใคร?</label>
+                <input type="password" id="password-input" class="form-control" placeholder="••••" onkeypress="checkEnter(event)">
+            </div>
+            <p id="login-error" style="color: var(--danger-color); font-size: 0.85rem; margin-bottom: 15px; display: none;">❌ ใครวะ ไม่รู้จัก</p>
+            <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="validateLogin()">เข้าสู่ระบบ</button>
+        </div>
+    </div>
+
+    <div id="dashboard-wrapper">
+        <div class="sidebar">
+            <div class="sidebar-brand">
+                <i class="fa-solid fa-user-shield"></i> My Assistant
+            </div>
+            <ul class="sidebar-menu">
+                <li id="menu-customer-info" class="active" onclick="switchTab('customer-info')"><i class="fa-solid fa-comments"></i> 1. ข้อมูลตอบลูกค้า</li>
+                <li id="menu-daily-report" onclick="switchTab('daily-report')"><i class="fa-solid fa-file-invoice"></i> 2. Daily Report</li>
+                <li id="menu-car-queue" onclick="switchTab('car-queue')"><i class="fa-solid fa-car"></i> 3. สรุปคิวรถ</li>
+                <li id="menu-partners" onclick="switchTab('partners')"><i class="fa-solid fa-handshake"></i> 4. Partner Agency</li>
+                <li id="menu-occupancy" onclick="switchTab('occupancy')"><i class="fa-solid fa-hotel"></i> 5. Room Occupancy</li>
+                <li id="menu-pending-jobs" onclick="switchTab('pending-jobs')">
+                    <i class="fa-solid fa-clock-history"></i> 6. งานค้าง/รอปิด
+                    <span class="badge" id="pending-badge">0</span>
+                </li>
+                <li id="menu-scan-passport" onclick="switchTab('scan-passport')">
+                    <i class="fa-solid fa-passport"></i> 7. Scan Passport
+                </li>
+            </ul>
+            <div style="padding: 20px; margin-top: auto;">
+                <button class="btn btn-danger" style="width: 100%; justify-content: center;" onclick="logout()"><i class="fa-solid fa-sign-out-alt"></i> ออกจากระบบ</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <header>
+                <div id="current-time"></div>
+                <div><strong id="user-role-display">ระบบจัดการโรงแรม</strong></div>
+            </header>
+
+            <div id="customer-info" class="container active">
+                <h2 style="margin-bottom: 15px;"><i class="fa-solid fa-comments"></i> ข้อมูลตอบลูกค้า</h2>
+                <div class="full-frame-card">
+                    <div class="sub-tabs">
+                        <div class="sub-tab active" onclick="switchFixedTab('checkin')" id="tab-btn-checkin">ฟอร์ม Confirmation Voucher</div>
+                        <div class="sub-tab" onclick="switchFixedTab('direction')" id="tab-btn-direction">รายละเอียดห้องพัก</div>
+                        <div class="sub-tab" onclick="switchFixedTab('policy')" id="tab-btn-policy">นโยบายการจอง</div>
+                        <div class="sub-tab" onclick="switchFixedTab('amenities')" id="tab-btn-amenities">ข้อมูลแหล่งท่องเที่ยว</div>
+                        <div class="sub-tab" onclick="switchFixedTab('payment')" id="tab-btn-payment">อื่นๆ</div>
+                    </div>
+                    
+                    <div class="customer-textarea-wrapper">
+                        <div id="tab-cnt-checkin" class="fixed-tab-content" style="height: 100%; display: flex; flex-direction: column; flex-grow: 1;">
+                            <textarea id="txt-checkin" class="full-textarea"></textarea>
+                        </div>
+                        <div id="tab-cnt-direction" class="fixed-tab-content" style="height: 100%; display: none; flex-direction: column; flex-grow: 1;">
+                            <textarea id="txt-direction" class="full-textarea"></textarea>
+                        </div>
+                        <div id="tab-cnt-policy" class="fixed-tab-content" style="height: 100%; display: none; flex-direction: column; flex-grow: 1;">
+                            <textarea id="txt-policy" class="full-textarea"></textarea>
+                        </div>
+                        <div id="tab-cnt-amenities" class="fixed-tab-content" style="height: 100%; display: none; flex-direction: column; flex-grow: 1;">
+                            <textarea id="txt-amenities" class="full-textarea"></textarea>
+                        </div>
+                        <div id="tab-cnt-payment" class="fixed-tab-content" style="height: 100%; display: none; flex-direction: column; flex-grow: 1;">
+                            <textarea id="txt-payment" class="full-textarea"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="action-bar">
+                        <span id="save-status" style="font-size: 0.9rem; color: var(--success-color); font-weight: bold; display: none;"><i class="fa-solid fa-circle-check"></i> บันทึกข้อมูลลงเครื่องนี้เรียบร้อยแล้ว!</span>
+                        <button class="btn btn-success" onclick="saveCurrentTabText()"><i class="fa-solid fa-floppy-disk"></i> บันทึกข้อมูล (Save)</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="daily-report" class="container">
+                <h2><i class="fa-solid fa-file-invoice"></i> Daily Report & Export</h2>
+                
+                <div style="margin: 15px 0; display: flex; gap: 10px;">
+                    <button id="shift-btn-morning" class="btn btn-primary" onclick="switchShift('morning')"><i class="fa-solid fa-sun"></i> Morning Shift</button>
+                    <button id="shift-btn-night" class="btn style-control" style="background:#e2e8f0; color:#475569;" onclick="switchShift('night')"><i class="fa-solid fa-moon"></i> Night Shift</button>
+                </div>
+
+                <div class="card" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>ชื่อพนักงานผู้บันทึกรายงาน</label>
+                            <input type="text" id="report-staff" class="form-control" placeholder="เช่น นุ้ย">
+                        </div>
+                        <div class="form-group">
+                            <label>เวลา/กะ ปฏิบัติงาน</label>
+                            <input type="text" id="report-hours" class="form-control" placeholder="เช่น 08:00 - 17:00 น.">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>วันที่</label>
+                        <input type="date" id="report-date" class="form-control">
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3><i class="fa-solid fa-check-square"></i> Job หลักประจำวัน (<span id="current-shift-label">Morning Shift</span>)</h3>
+                    <table id="routine-jobs-table"></table>
+                    
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label>รายงานการปฏิบัติงาน</label>
+                        <textarea id="daily-accident" class="form-control" rows="4" placeholder="ระบุอุบัติเหตุหรือเคสพิเศษ..."></textarea>
+                    </div>
+  
+                    <div id="daily-car-sync" style="background: #f1f5f9; padding: 15px; border-radius: 6px; margin: 15px 0; border: 1px dashed #cbd5e1;">
+                        ยังไม่มีข้อมูลคิวรถถูกส่งมา
+                    </div>
+                    <button class="btn btn-primary" onclick="alert('บันทึกสำเร็จ!')">บันทึก</button>
+                    <button class="btn btn-success" onclick="exportToJPG()">Export ภาพ JPG (A4)</button>
+                </div>
+            </div>
+
+            <div id="car-queue" class="container">
+                <h2><i class="fa-solid fa-car"></i> 3. หมวดสรุปคิวรถ</h2>
+                <div class="card">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px;" class="form-group">
+                        <input type="text" id="car-room" class="form-control" placeholder="เลขห้อง">
+                        <input type="text" id="car-time" class="form-control" placeholder="เวลา">
+                        <input type="text" id="car-dest" class="form-control" placeholder="ปลายทาง">
+                        <input type="text" id="car-note" class="form-control" placeholder="หมายเหตุ/คนขับ">
+                    </div>
+                    <button class="btn btn-success" onclick="addCarQueue()">เพิ่มคิวรถ</button>
+                    <button class="btn btn-warning" onclick="syncCarToDaily()">ส่งข้อมูลไป Daily Report</button>
+                    <table id="car-table">
+                        <thead><tr><th>ห้อง</th><th>เวลา</th><th>ปลายทาง</th><th>หมายเหตุ</th><th width="100px">จัดการ</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="partners" class="container">
+                <h2><i class="fa-solid fa-handshake"></i> 4. Partner Agency</h2>
+                <div class="card">
+                    <div class="form-group">
+                        <select id="agency-select" class="form-control">
+                            <option value="Booking.com">Booking.com</option>
+                            <option value="Agoda">Agoda</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="agency-promo" class="form-control" rows="3" placeholder="รายละเอียดโปรโมชั่น..."></textarea>
+                    </div>
+                    <button class="btn btn-primary" onclick="addAgencyUpdate()">บันทึกอัพเดต</button>
+                    <div id="agency-list" style="margin-top: 20px;"></div>
+                </div>
+            </div>
+
+            <div id="occupancy" class="container">
+                <h2><i class="fa-solid fa-hotel"></i> 5. Room Occupancy CSV</h2>
+                <div class="card">
+                    <input type="file" id="csv-file" class="form-control" accept=".csv" onchange="handleCSV(event)">
+                    <div id="occupancy-result" style="margin-top: 20px;"></div>
+                </div>
+            </div>
+
+            <div id="pending-jobs" class="container">
+                <h2><i class="fa-solid fa-clock-history"></i> 6. งานค้างรอปิด</h2>
+                <div class="card" style="border-left: 5px solid var(--danger-color);">
+                    <div class="form-group" style="display: flex; gap: 12px;">
+                        <input type="text" id="pending-text" class="form-control" placeholder="ระบุงานค้าง...">
+                        <button class="btn btn-danger" onclick="addPendingJobFront()" style="white-space: nowrap;">ตรึงงานค้าง</button>
+                    </div>
+                    <table id="pending-table">
+                        <thead><tr><th>รายละเอียดงานค้าง</th><th width="150px" style="text-align: center;">จัดการ</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div id="scan-passport" class="container">
+                <h2><i class="fa-solid fa-passport"></i> 7. Scan Passport</h2>
+                <div class="card">
+                    <p style="color: #64748b; font-style: italic;">ระบบสแกนพาสปอร์ตพร้อมใช้งานในส่วนถัดไป</p>
+                </div>
+            </div>
+       </div>
+    </div>
+
+    <div id="a4-export-container">
+        <div class="a4-report-title">
+            <h1>DAILY SHIFT REPORT</h1>
+            <p>รายงานสรุปผลการปฏิบัติงานประจำกะของพนักงานต้อนรับ</p>
+        </div>
+        <div class="a4-meta-info">
+            <div><strong>วันที่:</strong> <span id="a4-date">-</span></div>
+            <div><strong>กะทำงาน:</strong> <span id="a4-hours">-</span></div>
+            <div style="grid-column: span 2;"><strong>ผู้บันทึก:</strong> <span id="a4-staff">-</span></div>
+        </div>
+        <div class="a4-section-title">1. งานประจำวัน (<span id="a4-shift-label">Morning</span>)</div>
+        <table id="a4-routines-table"><thead><tr><th width="130px" style="text-align: center;">สถานะ</th><th>รายการมาตรฐาน</th></tr></thead><tbody></tbody></table>
+        <div class="a4-section-title">2. รายงานการปฏิบัติงาน</div>
+        <div class="a4-accident-box" id="a4-accident-text">-</div>
+        <div class="a4-section-title">3. ตารางสรุปคิวรถรับส่ง</div>
+        <div id="a4-cars-box"><p style="color: #64748b; font-style: italic;">ไม่มีข้อมูล</p></div>
+    </div>
+
+    <script>
+        let currentActiveSubTab = "checkin";
+        let currentRole = "guest"; 
+        let currentShift = "morning";
+
+        // รายการรูทีนแยกกะ
+        const shiftJobs = {
+            morning: [
+                "ตรวจสอบอีเมล์รอบเช้า",
+                "อัพเดท Alotment ให้แก่พาร์ทเนอร์",
+                "ตรวจสอบเรทราคาจองและโปรโมชั่นจาก OTA",
+                "บันทึกข้อมูล Guest In-House Database",
+                "จัดเก็บ New Booking & Database เข้าแฟ้ม",
+                "จัดเตรียมเวลคัมดริ้งค์และน้ำแข็ง",
+                "เตรียม Registration Form",
+                "ติดต่อคอนเฟิร์มลูกค้าเช็คอินวันพรุ่งนี้",
+                "รายงานการปฏิงานฟร้อนประจำกะเช้า"
+            ],
+            night: [
+                "อัพเดท VIP Guest List ประจำวัน",
+                "Mapping ข้อมูล รร.4 และ ตม.30 ส่งกรมการปกครอง",
+                "อัพเดท VIP Guest List ประจำวัน",
+                "บันทึกค่าใช้จ่าย Guest In-House",
+                "รายงาน New Booking ประจำวัน",
+                "Settle เครื่อง EDC:KB & BL",
+                "รายงานการปฏิงานฟร้อนประจำกะดึก",
+                "ปิดเครื่องมือสื่อสารทุกชนิด"
+            ]
+        };
+
+        // ค่าเริ่มต้นข้อมูลตอบลูกค้ากรณีเพิ่งเปิดใช้งานครั้งแรกและไม่มีข้อมูลเก่าในเครื่อง
+        const defaultTemplates = {
+            checkin: "เรียน คุณ \nขอขอบคุณที่เลือกพักในวันหยุดสุดพิเศษของคุณท่าน\nเช็คอิน \nเช็คเอ้าท์ ",
+            direction: "รีสอร์ทตั้งอยู่ห่างจากสนามบิน 15-20 นาที ท่านสามารถเดินทางมาโดยแท็กซี่...",
+            policy: "1. เด็กอายุ 0-6 ขวบพักรวมฟรี\n2. เตียงเสริมมีค่าบริการ 500 บาท",
+            amenities: "- อาหารเช้าให้บริการเวลา 07:00 น. - 10:30 น.",
+            payment: "กรุณาชำระเงินมัดจำผ่านบัญชีธนาคาร..."
+        };
+
+        // ฟังก์ชันสลับกะ Morning / Night
+        function switchShift(shift) {
+            currentShift = shift;
+            document.getElementById('current-shift-label').innerText = shift === 'morning' ? 'Morning Shift' : 'Night Shift';
+            
+            const mBtn = document.getElementById('shift-btn-morning');
+            const nBtn = document.getElementById('shift-btn-night');
+            if(shift === 'morning') {
+                mBtn.className = "btn btn-primary";
+                nBtn.className = "btn";
+                nBtn.style = "background:#e2e8f0; color:#475569;";
+                document.getElementById('report-hours').value = "08:00 - 17:00 น.";
+            } else {
+                nBtn.className = "btn btn-primary";
+                mBtn.className = "btn";
+                mBtn.style = "background:#e2e8f0; color:#475569;";
+                document.getElementById('report-hours').value = "17:00 - 08:00 น.";
+            }
+            renderRoutineJobs();
+        }
+
+        function renderRoutineJobs() {
+            const table = document.getElementById('routine-jobs-table');
+            table.innerHTML = `<tr><th width="80px" style="text-align: center;">สถานะ</th><th>รายละเอียดงานมาตรฐาน</th></tr>`;
+            shiftJobs[currentShift].forEach((job, index) => {
+                table.innerHTML += `<tr>
+                    <td style="text-align: center;"><input type="checkbox" id="job-${index}" checked></td>
+                    <td><label for="job-${index}">${job}</label></td>
+                </tr>`;
+            });
+        }
+
+        // ระบบตรวจสอบรหัสผ่าน (แบ่งสิทธิ์)
+        function validateLogin() {
+            let input = document.getElementById('password-input').value;
+            if(input === "call911") {
+                currentRole = "admin";
+                setupRoleAccess();
+                loginSuccess("ผู้จัดการ / Admin");
+            } else if (input === "9999") {
+                currentRole = "guest";
+                setupRoleAccess();
+                loginSuccess("พนักงาน / Guest");
+            } else {
+                document.getElementById('login-error').style.display = 'block';
+            }
+        }
+
+        function setupRoleAccess() {
+            const adminMenus = ['menu-customer-info', 'menu-partners', 'menu-occupancy', 'menu-pending-jobs'];
+            if(currentRole === 'guest') {
+                adminMenus.forEach(id => document.getElementById(id).style.display = 'none');
+                switchTab('daily-report'); 
+            } else {
+                adminMenus.forEach(id => document.getElementById(id).style.display = 'flex');
+                switchTab('customer-info');
+            }
+            document.getElementById('user-role-display').innerText = `ระบบจัดการโรงแรม (${currentRole.toUpperCase()} Mode - Local Storage)`;
+        }
+
+        function loginSuccess(roleName) {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('dashboard-wrapper').style.display = 'flex';
+            document.getElementById('password-input').value = '';
+            document.getElementById('login-error').style.display = 'none';
+            
+            // โหลดข้อมูลจาก localStorage ของเบราว์เซอร์
+            loadSavedTextsLocal();
+            loadPendingJobsLocal();
+        }
+
+        // --- ปรับส่วนควบคุมข้อมูล: เปลี่ยนเป็นดึง/บันทึกจาก localStorage ของเครื่องแทน App Script ---
+        function loadSavedTextsLocal() {
+            if(currentRole !== 'admin') return;
+            
+            // ดึงข้อมูลหรือใช้ค่าเริ่มต้นถ้ายังไม่มีประวัติบันทึกในเครื่องนี้
+            const storedTexts = localStorage.getItem('hotel_template_texts');
+            let cloudTexts = storedTexts ? JSON.parse(storedTexts) : defaultTemplates;
+            
+            Object.keys(cloudTexts).forEach(key => {
+                if(document.getElementById('txt-' + key)) {
+                    document.getElementById('txt-' + key).value = cloudTexts[key];
+                }
+            });
+        }
+
+        function saveCurrentTabText() {
+            const value = document.getElementById('txt-' + currentActiveSubTab).value;
+            
+            const storedTexts = localStorage.getItem('hotel_template_texts');
+            let cloudTexts = storedTexts ? JSON.parse(storedTexts) : defaultTemplates;
+            
+            cloudTexts[currentActiveSubTab] = value;
+            localStorage.setItem('hotel_template_texts', JSON.stringify(cloudTexts));
+            
+            const statusSpan = document.getElementById('save-status');
+            statusSpan.style.display = 'inline';
+            setTimeout(() => { statusSpan.style.display = 'none'; }, 2000);
+        }
+
+        function loadPendingJobsLocal() {
+            const storedJobs = localStorage.getItem('hotel_pending_jobs');
+            // จำลองค่าเริ่มต้นของเดิมหากในเครื่องยังไม่มีประวัติ
+            let jobs = storedJobs ? JSON.parse(storedJobs) : [
+                { id: 1, text: "ห้อง 204 รอแบงก์ปรับยอดสลิปค่าห้อง", status: "pending" }
+            ];
+            
+            // กรองเอาเฉพาะอันที่เป็น pending มาแสดงผล
+            let activeJobs = jobs.filter(j => j.status === "pending");
+            renderPendingJobsList(activeJobs);
+        }
+
+        function addPendingJobFront() {
+            const text = document.getElementById('pending-text').value.trim();
+            if(!text) return;
+            
+            const storedJobs = localStorage.getItem('hotel_pending_jobs');
+            let jobs = storedJobs ? JSON.parse(storedJobs) : [
+                { id: 1, text: "ห้อง 204 รอแบงก์ปรับยอดสลิปค่าห้อง", status: "pending" }
+            ];
+            
+            jobs.push({
+                id: Date.now(),
+                text: text,
+                status: "pending",
+                createdAt: new Date()
+            });
+            
+            localStorage.setItem('hotel_pending_jobs', JSON.stringify(jobs));
+            document.getElementById('pending-text').value = '';
+            loadPendingJobsLocal();
+        }
+
+        function closePendingJob(rowId) {
+            const storedJobs = localStorage.getItem('hotel_pending_jobs');
+            if(!storedJobs) return;
+            
+            let jobs = JSON.parse(storedJobs);
+            for(let i = 0; i < jobs.length; i++) {
+                if(jobs[i].id == rowId) {
+                    jobs[i].status = "closed";
+                    break;
+                }
+            }
+            
+            localStorage.setItem('hotel_pending_jobs', JSON.stringify(jobs));
+            loadPendingJobsLocal();
+        }
+
+        function renderPendingJobsList(jobs) {
+            const tbody = document.querySelector('#pending-table tbody');
+            tbody.innerHTML = '';
+            jobs.forEach(job => {
+                tbody.innerHTML += `<tr>
+                    <td style="color:var(--danger-color); font-weight:600;">⚠️ ${job.text}</td>
+                    <td style="text-align:center;"><button class="btn btn-success" onclick="closePendingJob(${job.id})">ปิดงานสำเร็จ</button></td>
+                </tr>`;
+            });
+            document.getElementById('pending-badge').innerText = jobs.length;
+        }
+
+        function checkEnter(event) { if (event.key === "Enter") { validateLogin(); } }
+        
+        function logout() {
+            document.getElementById('login-screen').style.display = 'flex';
+            document.getElementById('dashboard-wrapper').style.display = 'none';
+        }
+        
+        document.getElementById('report-date').valueAsDate = new Date();
+        
+        function switchTab(tabId) {
+            document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.sidebar-menu li').forEach(li => li.classList.remove('active'));
+            
+            const targetContainer = document.getElementById(tabId);
+            if(targetContainer) targetContainer.classList.add('active');
+            
+            const targetMenu = document.getElementById('menu-' + tabId);
+            if(targetMenu) targetMenu.classList.add('active');
+        }
+
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('current-time').innerText = '⏰ เวลาปัจจุบัน: ' + now.toLocaleString('th-TH');
+        }, 1000);
+
+        function switchFixedTab(tabKey) {
+            currentActiveSubTab = tabKey;
+            document.querySelectorAll('.fixed-tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('#customer-info .sub-tab').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-cnt-' + tabKey).style.display = 'flex';
+            document.getElementById('tab-btn-' + tabKey).classList.add('active');
+        }
+
+        function exportToJPG() {
+            const staffName = document.getElementById('report-staff').value.trim() || 'ไม่ได้ระบุ';
+            const shiftHours = document.getElementById('report-hours').value.trim() || 'ไม่ได้ระบุ';
+            const rawDate = document.getElementById('report-date').value;
+            const reportDate = rawDate ? new Date(rawDate).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }) : 'ไม่ได้ระบุ';
+            const accidentText = document.getElementById('daily-accident').value.trim() || 'ปกติ';
+            
+            document.getElementById('a4-staff').innerText = staffName;
+            document.getElementById('a4-hours').innerText = shiftHours;
+            document.getElementById('a4-date').innerText = reportDate;
+            document.getElementById('a4-accident-text').innerText = accidentText;
+            document.getElementById('a4-shift-label').innerText = currentShift === 'morning' ? 'Morning Shift' : 'Night Shift';
+
+            const routineBody = document.querySelector('#a4-routines-table tbody');
+            routineBody.innerHTML = '';
+            shiftJobs[currentShift].forEach((job, i) => {
+                const isChecked = document.getElementById('job-' + i).checked;
+                routineBody.innerHTML += `<tr><td style="text-align:center; font-weight:bold; color:${isChecked ? '#10b981' : '#ef4444'}">${isChecked ? '🟢 สำเร็จ' : '❌ ไม่สำเร็จ'}</td><td>${job}</td></tr>`;
+            });
+
+            const syncDivHtml = document.getElementById('daily-car-sync').innerHTML;
+            const a4CarsBox = document.getElementById('a4-cars-box');
+            a4CarsBox.innerHTML = syncDivHtml.includes('table') ? syncDivHtml : `<p style="color:#64748b; font-style:italic;">ไม่มีข้อมูลคิวรถ</p>`;
+
+            const target = document.getElementById('a4-export-container');
+            target.style.left = "0px";
+            target.style.position = "static";
+
+            html2canvas(target, { scale: 2 }).then(canvas => {
+                target.style.position = "absolute";
+                target.style.left = "-9999px";
+                const link = document.createElement('a');
+                link.download = `Daily_Report_${rawDate || 'สรุป'}.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 0.95);
+                link.click();
+            }).catch(err => {
+                target.style.position = "absolute";
+                target.style.left = "-9999px";
+            });
+        }
+
+        // --- จัดการคิวรถ ---
+        let carQueues = [];
+        function addCarQueue() {
+            const room = document.getElementById('car-room').value.trim();
+            const time = document.getElementById('car-time').value.trim();
+            const dest = document.getElementById('car-dest').value.trim();
+            const note = document.getElementById('car-note').value.trim();
+            if(!room || !time || !dest) return;
+            carQueues.push({ room, time, dest, note });
+            renderCarTable();
+        }
+        
+        function renderCarTable() {
+            const tbody = document.querySelector('#car-table tbody');
+            tbody.innerHTML = '';
+            carQueues.forEach((car, index) => {
+                tbody.innerHTML += `<tr><td>ห้อง ${car.room}</td><td><b>${car.time} น.</b></td><td>${car.dest}</td><td>${car.note || '-'}</td><td><button class="btn btn-danger" style="padding:4px 10px;" onclick="deleteCarQueue(${index})">ลบ</button></td></tr>`;
+            });
+        }
+        
+        function deleteCarQueue(index) { carQueues.splice(index, 1); renderCarTable(); }
+        
+        function syncCarToDaily() {
+            const syncDiv = document.getElementById('daily-car-sync');
+            if(carQueues.length === 0) { syncDiv.innerHTML = "ยังไม่มีข้อมูลคิวรถถูกส่งมา"; return; }
+            let html = `<table><thead><tr><th>ห้อง</th><th>เวลา</th><th>ปลายทาง</th><th>หมายเหตุ</th></tr></thead><tbody>`;
+            carQueues.forEach(car => { html += `<tr><td>ห้อง ${car.room}</td><td>${car.time} น.</td><td>${car.dest}</td><td>${car.note || '-'}</td></tr>`; });
+            html += `</tbody></table>`;
+            syncDiv.innerHTML = html;
+            alert('ซิงค์ไปหน้าหลักสำเร็จ!');
+        }
+
+        function addAgencyUpdate() {
+            const agency = document.getElementById('agency-select').value;
+            const text = document.getElementById('agency-promo').value.trim();
+            if(!text) return;
+            const list = document.getElementById('agency-list');
+            const d = document.createElement('div'); d.className = 'card'; d.style.background = '#f8fafc';
+            d.innerHTML = `<strong>🟢 ข้อมูลใหม่จาก ${agency}:</strong> <p>${text}</p>`;
+            list.insertBefore(d, list.firstChild);
+            document.getElementById('agency-promo').value = '';
+        }
+
+        function handleCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n');
+                let html = `<h4>📊 รายงาน Occupancy (${file.name})</h4><table>`;
+                lines.slice(0, 6).forEach((line, index) => {
+                    if(!line.trim()) return; const columns = line.split(','); html += `<tr>`;
+                    columns.forEach(col => { html += index === 0 ? `<th>${col}</th>` : `<td>${col}</td>`; }); html += `</tr>`;
+                });
+                html += `</table>`; document.getElementById('occupancy-result').innerHTML = html;
+            };
+            reader.readAsText(file);
+        }
+
+        // โหลดข้อมูลเริ่มต้นกะตอนเปิด
+        switchShift('morning');
+    </script>
+</body>
+</html>
