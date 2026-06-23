@@ -318,7 +318,7 @@
 
         <div class="login-pending-box">
             <h3><i class="fa-solid fa-triangle-exclamation"></i> รายการงานค้างรอปิด (Pending Jobs)</h3>
-            <ul id="login-pending-list" class="login-pending-list"><li>กำลังโหลดข้อมูลจาก Firebase...</li></ul>
+            <ul id="login-pending-list" class="login-pending-list"><li>กำลังโหลดข้อมูล...</li></ul>
         </div>
     </div>
 
@@ -331,7 +331,7 @@
                 <li id="menu-customer-info" class="active" onclick="switchTab('customer-info')"><i class="fa-solid fa-comments"></i> 1. ข้อมูลตอบลูกค้า</li>
                 <li id="menu-daily-report" onclick="switchTab('daily-report')"><i class="fa-solid fa-file-invoice"></i> 2. Daily Report</li>
                 <li id="menu-car-queue" onclick="switchTab('car-queue')"><i class="fa-solid fa-car"></i> 3. สรุปคิวรถ</li>
-                <li id="menu-partners" onclick="switchTab('partners')"><i class="fa-solid fa-handshake"></i> 4. Partner Agency</li>
+                <li id="menu-partners" onclick="switchTab('partners')"><i class="fa-solid fa-handshake"></i> 4. Active Promotion</li>
                 <li id="menu-occupancy" onclick="switchTab('occupancy')"><i class="fa-solid fa-hotel"></i> 5. Room Occupancy</li>
                 <li id="menu-pending-jobs" onclick="switchTab('pending-jobs')">
                     <i class="fa-solid fa-clock-history"></i> 6. งานค้าง/รอปิด
@@ -402,11 +402,11 @@
                     <div class="grid-2">
                         <div class="form-group">
                             <label>ชื่อพนักงานผู้บันทึกรายงาน</label>
-                            <input type="text" id="report-staff" class="form-control" placeholder="เช่น นุ้ย">
+                            <input type="text" id="report-staff" class="form-control" placeholder="เช่น โหม๋">
                         </div>
                         <div class="form-group">
                             <label>เวลา/กะ ปฏิบัติงาน</label>
-                            <input type="text" id="report-hours" class="form-control" placeholder="เช่น 08:00 - 17:00 น.">
+                            <input type="text" id="report-hours" class="form-control" placeholder="เช่น 07:00 - 16:00 น.">
                         </div>
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
@@ -421,7 +421,7 @@
                     
                     <div class="form-group" style="margin-top: 20px;">
                         <label>รายงานการปฏิบัติงาน</label>
-                        <textarea id="daily-accident" class="form-control" rows="4" placeholder="ระบุอุบัติเหตุหรือเคสพิเศษ..."></textarea>
+                        <textarea id="daily-accident" class="form-control" rows="4" placeholder="ทำอะไรบ้างล่ะ..."></textarea>
                     </div>
   
                     <div id="daily-car-sync" style="background: #f1f5f9; padding: 15px; border-radius: 6px; margin: 15px 0; border: 1px dashed #cbd5e1;">
@@ -457,7 +457,7 @@
                             <input type="text" id="car-note" class="form-control" placeholder="หมายเหตุ">
                         </div>
                     </div>
-                    <button class="btn btn-success" onclick="addCarQueueFront()"><i class="fa-solid fa-plus"></i> เพิ่มคิวรถไปยัง Firebase</button>
+                    <button class="btn btn-success" onclick="addCarQueueFront()"><i class="fa-solid fa-plus"></i> เพิ่มคิวรถไปยัง</button>
                     <button class="btn btn-warning" onclick="syncCarToDaily()">ส่งไปหน้า Daily Report</button>
                     <table id="car-table">
                         <thead><tr><th>วันที่</th><th>ห้อง</th><th>เวลา</th><th>สถานที่/หมายเหตุ</th><th>คนขับ</th><th width="100px">จัดการ</th></tr></thead>
@@ -471,8 +471,10 @@
                 <div class="card">
                     <div class="form-group">
                         <select id="agency-select" class="form-control">
-                            <option value="Booking.com">Booking.com</option>
-                            <option value="Agoda">Agoda</option>
+                            <option value="PRO1">PRO1</option>
+                            <option value="PRO2">PRO2</option>
+                            <option value="PRO3">PRO3</option>
+                            <option value="PRO4">PRO4</option>
                         </select>
                     </div>
                     <div class="form-group">
